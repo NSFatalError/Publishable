@@ -1,0 +1,139 @@
+name: Pull request
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: "16.3"
+
+jobs:
+  prepare:
+    runs-on: macos-15
+    outputs:
+      platforms: ${{ steps.platforms.outputs.platforms }}
+      scheme: ${{ steps.scheme.outputs.scheme }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Xcode
+      run: sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app
+
+    - name: Setup mise
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        curl https://mise.run | sh
+        mise install
+    - name: Run linters
+      run: mise lint
+
+    - name: Extract platforms
+      id: platforms
+      run: |
+        platforms=$(swift package dump-package | jq -r '[.platforms[].platformName] | unique | @json')
+        echo "Platforms: $platforms"
+        echo "platforms=$platforms" >> $GITHUB_OUTPUT
+
+    - name: Extract scheme
+      id: scheme
+      run: |
+        repo=$(basename $GITHUB_REPOSITORY)
+        schemes=$(xcodebuild -list)
+        echo "$schemes"
+
+        if echo "$schemes" | grep -q "$repo-Package"; then
+          scheme="$repo-Package"
+        elif echo "$schemes" | grep -q "$repo"; then
+          scheme="$repo"
+        else
+          echo "Unable to select a scheme"
+          exit 1
+        fi
+
+        echo "Selected scheme: $scheme"
+        echo "scheme=$scheme" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: prepare
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup Xcode
+      run: sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app
+
+    - name: Map destinations
+      if: ${{ matrix.platform != 'macos' }}
+      id: destination
+      run: |
+        case "${{ matrix.platform }}" in
+          maccatalyst)
+            destination="platform=macOS,variant=Mac Catalyst"
+            ;;
+          ios)
+            destination="platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest"
+            ;;
+          tvos)
+            destination="platform=tvOS Simulator,name=Apple TV 4K (3rd generation),OS=latest"
+            ;;
+          watchos)
+            destination="platform=watchOS Simulator,name=Apple Watch Series 10 (46mm),OS=latest"
+            ;;
+          visionos)
+            destination="platform=visionOS Simulator,name=Apple Vision Pro,OS=latest"
+            ;;
+          *)
+            echo "Unknown platform: ${{ matrix.platform }}"
+            exit 1
+            ;;
+        esac
+        echo "destination=$destination" >> $GITHUB_OUTPUT
+
+    - name: Build (SPM)
+      if: ${{ matrix.platform == 'macos' }}
+      run: swift build
+
+    - name: Build (Xcode)
+      if: ${{ matrix.platform != 'macos' }}
+      run: |
+        set -o pipefail
+        xcodebuild build \
+          -scheme ${{ needs.prepare.outputs.scheme }} \
+          -destination "${{ steps.destination.outputs.destination }}" | \
+          xcbeautify --renderer github-actions
+
+    - name: Test (SPM)
+      if: ${{ matrix.platform == 'macos' }}
+      run: |
+        set -o pipefail
+        swift test --enable-code-coverage | xcbeautify --renderer github-actions
+        TEST_BUNDLE=$(find .build/debug/ -name "*.xctest" | head -n 1)
+        TEST_EXECUTABLE="$TEST_BUNDLE/Contents/MacOS/$(basename "$TEST_BUNDLE" .xctest)"
+        xcrun llvm-cov export -format="lcov" \
+          -instr-profile .build/debug/codecov/default.profdata \
+          "$TEST_EXECUTABLE" > info.lcov
+
+    - name: Test (Xcode)
+      if: ${{ matrix.platform != 'macos' }}
+      run: |
+        set -o pipefail
+        xcodebuild test \
+          -scheme ${{ needs.prepare.outputs.scheme }} \
+          -destination "${{ steps.destination.outputs.destination }}" | \
+          xcbeautify --renderer github-actions
+
+    - name: Check coverage (SPM)
+      if: ${{ matrix.platform == 'macos' }}
+      uses: codecov/codecov-action@v5
+      with:
+        fail_ci_if_error: true

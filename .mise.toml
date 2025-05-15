@@ -1,0 +1,39 @@
+[vars]
+sources = "Sources"
+tests = "Tests"
+swiftlint = '~/.local/bin/mise x -- swiftlint'
+swiftformat = '~/.local/bin/mise x -- swiftformat'
+
+[tools]
+swiftlint = "0.58.2"
+swiftformat = "0.55.5"
+
+[tasks.lint]
+description = 'Run all linters'
+depends = ["swiftlint:*", "swiftformat"]
+
+[tasks."swiftlint:sources"]
+description = 'Run SwiftLint for source files'
+quiet = true
+run = """
+{{ vars.swiftlint }} lint \
+--config .swiftlint.yml \
+--strict \
+{{ vars.sources }}
+"""
+
+[tasks."swiftlint:tests"]
+description = 'Run SwiftLint for test files'
+quiet = true
+run = """
+{{ vars.swiftlint }} lint \
+--config .swiftlint.yml \
+--config .swiftlint.tests.yml \
+--strict \
+{{ vars.tests }}
+"""
+
+[tasks.swiftformat]
+description = 'Run SwiftFormat for all files'
+quiet = true
+run = "{{ vars.swiftformat }} . --lint"

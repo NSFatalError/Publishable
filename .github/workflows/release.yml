@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  XCODE_VERSION: "16.3"
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup Xcode
+        run: sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app
+
+      - name: Verify changes
+        run: |
+          current_tag=${GITHUB_REF#refs/tags/}
+          previous_tag=$(git tag --sort=-v:refname | head -n 2 | tail -n 1)
+
+          current_major=$(echo "$current_tag" | cut -d '.' -f 1)
+          previous_major=$(echo "$previous_tag" | cut -d '.' -f 1)
+          echo "Comparing $current_tag with $previous_tag..."
+
+          if [ "$current_major" -gt "$previous_major" ]; then
+            swift package diagnose-api-breaking-changes "$previous_tag" || true
+          else
+            swift package diagnose-api-breaking-changes "$previous_tag"
+          fi
+
+      - name: Draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current_tag=${GITHUB_REF#refs/tags/}
+          gh release create "$current_tag" \
+            --repo="$GITHUB_REPOSITORY" \
+            --generate-notes \
+            --draft
