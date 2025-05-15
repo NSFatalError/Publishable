@@ -1,6 +1,7 @@
 # Publishable
 
 ![Swift](https://img.shields.io/badge/Swift-6.0-EF5239?logo=swift&labelColor=white)
+[![Codecov](https://codecov.io/github/NSFatalError/Publishable/graph/badge.svg?token=axMe8BnuvB)](https://codecov.io/github/NSFatalError/Publishable)
 
 Synchronous observation of `Observable` changes through `Combine`
 
