@@ -7,6 +7,3 @@
 //
 
 import Observation
-
-@_documentation(visibility: private)
-public typealias SwiftObservationRegistrar = ObservationRegistrar
