@@ -1,6 +1,7 @@
 # Publishable
 
-![Swift](https://img.shields.io/badge/Swift-6.0-EF5239?logo=swift&labelColor=white)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNSFatalError%2FPublishable%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/NSFatalError/Publishable)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNSFatalError%2FPublishable%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/NSFatalError/Publishable)
 [![Codecov](https://codecov.io/github/NSFatalError/Publishable/graph/badge.svg?token=axMe8BnuvB)](https://codecov.io/github/NSFatalError/Publishable)
 
 Synchronous observation of `Observable` changes through `Combine`
@@ -8,6 +9,7 @@ Synchronous observation of `Observable` changes through `Combine`
 #### Contents
 - [What Problem Publishable Solves?](#what-problem-publishable-solves)
 - [How Publishable Works?](#how-publishable-works)
+- [Documentation](#documentation)
 - [Installation](#installation)
 
 ## What Problem Publishable Solves?
@@ -70,6 +72,10 @@ While I acknowledge that this usage might not have been intended by the authors,
 It relies solely on well-understood behaviors of Swift and its public APIs.
 
 This approach has been carefully tested and verified to work with both `Observable` and `SwiftData.Model` macros.
+
+## Documentation
+
+[Full documentation is available on the Swift Package Index.](https://swiftpackageindex.com/NSFatalError/Publishable/documentation/publishable)
 
 ## Installation
 
