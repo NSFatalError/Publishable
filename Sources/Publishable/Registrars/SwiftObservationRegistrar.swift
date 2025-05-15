@@ -8,4 +8,5 @@
 
 import Observation
 
+@_documentation(visibility: private) // swiftformat:disable:next all
 public typealias SwiftObservationRegistrar = ObservationRegistrar
