@@ -2,7 +2,7 @@
 
 ![Swift](https://img.shields.io/badge/Swift-6.0-EF5239?logo=swift&labelColor=white)
 
-Synchronous observation of `Observable` changes through `Combine`.
+Synchronous observation of `Observable` changes through `Combine`
 
 #### Contents
 - [What Problem Publishable Solves?](#what-problem-publishable-solves)
@@ -12,13 +12,13 @@ Synchronous observation of `Observable` changes through `Combine`.
 ## What Problem Publishable Solves?
 
 With the introduction of [SE-0475: Transactional Observation of Values](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0475-observed.md),
-Swift gains built-in support for observing changes in `Observable` types. This solution is great, but it only covers some of the use cases, as it 
-publishes the updates via `AsyncSequence`.
+Swift gains built-in support for observing changes to `Observable` types. This solution is great, but it only covers some of the use cases, as it 
+publishes the updates via an `AsyncSequence`.
 
-In some scenarios, however, developers need to perform actions synchronously — immediately after a change occurs.
+In some scenarios, however, developers need to perform actions synchronously - immediately after a change occurs.
 
 This is where `Publishable` comes in. It allows `Observation` and `Combine` to coexist within a single type, letting you take advantage of the latest 
-`Observable` features, while processing changes synchronously when needed. It even works with the `SwiftData` `Model` macro!
+`Observable` features, while processing changes synchronously when needed. It even works with the `SwiftData.Model` macro!
 
 ```swift
 import Publishable 
@@ -68,7 +68,7 @@ The `@Publishable` macro relies on two key properties of Swift Macros and `Obser
 While I acknowledge that this usage might not have been intended by the authors, I would refrain from calling it a hack.
 It relies solely on well-understood behaviors of Swift and its public APIs.
 
-This approach has been carefully tested and verified to work with both `Observable` and `Model` macros.
+This approach has been carefully tested and verified to work with both `Observable` and `SwiftData.Model` macros.
 
 ## Installation
 
