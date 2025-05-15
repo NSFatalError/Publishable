@@ -1,0 +1,80 @@
+# Publishable
+
+![Swift](https://img.shields.io/badge/Swift-6.0-EF5239?logo=swift&labelColor=white)
+
+Synchronous observation of `Observable` changes through `Combine`.
+
+#### Contents
+- [What Problem Publishable Solves?](#what-problem-publishable-solves)
+- [How Publishable Works?](#how-publishable-works)
+- [Installation](#installation)
+
+## What Problem Publishable Solves?
+
+With the introduction of [SE-0475: Transactional Observation of Values](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0475-observed.md),
+Swift gains built-in support for observing changes in `Observable` types. This solution is great, but it only covers some of the use cases, as it 
+publishes the updates via `AsyncSequence`.
+
+In some scenarios, however, developers need to perform actions synchronously — immediately after a change occurs.
+
+This is where `Publishable` comes in. It allows `Observation` and `Combine` to coexist within a single type, letting you take advantage of the latest 
+`Observable` features, while processing changes synchronously when needed. It even works with the `SwiftData` `Model` macro!
+
+```swift
+import Publishable 
+
+@Publishable @Observable
+final class Person {
+    var name = "John"
+    var surname = "Doe"
+    
+    var fullName: String {
+        "\(name) \(surname)"
+    }
+}
+
+let person = Person()
+let nameCancellable = person.publisher.name.sink { name in
+    print("Name -", name)
+}
+let fullNameCancellable = person.publisher.fullName.sink { fullName in
+    print("Full name -", fullName)
+}
+
+// Initially prints (same as `Published` property wrapper):
+// Name - John
+// Full name - John Doe
+
+person.name = "Kamil"
+// Prints:
+// Name - Kamil
+// Full name - Kamil Doe
+
+person.surname = "Strzelecki"
+// Prints:
+// Full name - Kamil Strzelecki
+```
+
+## How Publishable Works?
+
+The `@Publishable` macro relies on two key properties of Swift Macros and `Observation` module:
+- Macro expansions are compiled in the context of the module where they’re used. This allows references in the macro to be overloaded by locally available symbols.
+- Swift exposes `ObservationRegistrar` as a documented, public API, making it possible to use it safely and directly.
+
+`Publishable` leverages these facts to overload the default `ObservationRegistrar` with a custom one that:
+- Forwards changes to Swift’s native `ObservationRegistrar`
+- Simultaneously emits values through generated `Combine` publishers
+
+While I acknowledge that this usage might not have been intended by the authors, I would refrain from calling it a hack.
+It relies solely on well-understood behaviors of Swift and its public APIs.
+
+This approach has been carefully tested and verified to work with both `Observable` and `Model` macros.
+
+## Installation
+
+```swift
+.package(
+    url: "https://github.com/NSFatalError/Publishable",
+    from: "1.0.0"
+)
+```
