@@ -8,6 +8,7 @@
 
 import Observation
 
+@_documentation(visibility: private)
 public protocol PublishableObservationRegistrar {
 
     associatedtype Object: Publishable, Observable
